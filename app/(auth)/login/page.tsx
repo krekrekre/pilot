@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/games';
+  const next = searchParams.get('next') || '/training';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +64,7 @@ function LoginForm() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8c1d68] focus:ring-1 focus:ring-[#8c1d68]/30"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
             />
           </div>
           <div>
@@ -75,13 +75,13 @@ function LoginForm() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8c1d68] focus:ring-1 focus:ring-[#8c1d68]/30"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-[#8c1d68] hover:bg-[#751857] text-white font-bold text-sm transition disabled:opacity-60"
+            className="w-full py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition disabled:opacity-60"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
@@ -89,7 +89,7 @@ function LoginForm() {
 
         <p className="mt-5 text-center text-xs text-slate-500">
           No account?{' '}
-          <Link href="/signup" className="text-[#8c1d68] font-semibold hover:underline">Create one free</Link>
+          <Link href="/signup" className="text-brand-500 font-semibold hover:underline">Create one free</Link>
         </p>
       </div>
     </div>

@@ -21,7 +21,7 @@ export default function SignupPage() {
     try {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
         // Dev mode: skip auth
-        router.push('/games');
+        router.push('/training');
         return;
       }
 
@@ -34,7 +34,7 @@ export default function SignupPage() {
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/games` },
+        options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/training` },
       });
 
       if (authError) { setError(authError.message); return; }
@@ -82,7 +82,7 @@ export default function SignupPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8c1d68] focus:ring-1 focus:ring-[#8c1d68]/30"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
             />
           </div>
           <div>
@@ -93,13 +93,13 @@ export default function SignupPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="min. 8 characters"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8c1d68] focus:ring-1 focus:ring-[#8c1d68]/30"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-[#8c1d68] hover:bg-[#751857] text-white font-bold text-sm transition disabled:opacity-60"
+            className="w-full py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition disabled:opacity-60"
           >
             {loading ? 'Creating account…' : 'Create account'}
           </button>
@@ -107,7 +107,7 @@ export default function SignupPage() {
 
         <p className="mt-5 text-center text-xs text-slate-500">
           Already have an account?{' '}
-          <Link href="/login" className="text-[#8c1d68] font-semibold hover:underline">Sign in</Link>
+          <Link href="/login" className="text-brand-500 font-semibold hover:underline">Sign in</Link>
         </p>
       </div>
     </div>

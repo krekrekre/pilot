@@ -52,7 +52,7 @@ function fmtDelay(val: number) {
   return val.toFixed(3).replace(/0+$/, '').replace(/\.$/, '') + 's';
 }
 
-export default function NumberMemoryGame() {
+export default function NumberMemoryModule() {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [stage, setStage] = useState<Stage>('start');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -255,7 +255,7 @@ export default function NumberMemoryGame() {
             {/* Previous — always disabled */}
             <button
               disabled
-              className="text-xs font-semibold flex items-center space-x-1 px-3 py-2 rounded-lg bg-[#8c1d68] text-white opacity-30 cursor-not-allowed"
+              className="text-xs font-semibold flex items-center space-x-1 px-3 py-2 rounded-lg bg-brand-500 text-white opacity-30 cursor-not-allowed"
             >
               <span>‹</span><span>Previous question</span>
             </button>
@@ -264,7 +264,7 @@ export default function NumberMemoryGame() {
             <div className="flex flex-col items-center flex-1 max-w-xs mx-4">
               <div className="text-xs font-semibold text-slate-600 mb-1.5 font-mono">{qNum} / {totalQ}</div>
               <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                <div className="bg-[#8c1d68] h-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                <div className="bg-brand-500 h-full transition-all duration-300" style={{ width: `${pct}%` }} />
               </div>
             </div>
 
@@ -272,7 +272,7 @@ export default function NumberMemoryGame() {
             <button
               onClick={handleNext}
               disabled={isPlayingAudio || (stage === 'input' && currentDigits.length !== config.digitsCount)}
-              className="text-xs font-semibold flex items-center space-x-1 px-3 py-2 rounded-lg bg-[#8c1d68] hover:bg-[#751857] text-white transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="text-xs font-semibold flex items-center space-x-1 px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
               <span>{qNum === totalQ ? 'Finish test' : 'Next question'}</span><span>›</span>
             </button>
@@ -292,7 +292,7 @@ export default function NumberMemoryGame() {
                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Acoustic Memory module</h2>
                 <button
                   onClick={() => startNewTest(config)}
-                  className="shrink-0 px-5 py-2.5 rounded-lg bg-[#8c1d68] hover:bg-[#751857] text-white font-bold text-sm shadow-md transition cursor-pointer"
+                  className="shrink-0 px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-md transition cursor-pointer"
                 >
                   Start module
                 </button>
@@ -309,7 +309,7 @@ export default function NumberMemoryGame() {
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Settings</h3>
                 <button
                   onClick={() => { setConfig({ ...DEFAULT_CONFIG }); saveConfig({ ...DEFAULT_CONFIG }); }}
-                  className="text-xs font-semibold text-slate-500 hover:text-[#8c1d68] px-3 py-1 rounded-md border border-slate-300 hover:border-[#8c1d68]/50 bg-white transition cursor-pointer"
+                  className="text-xs font-semibold text-slate-500 hover:text-brand-500 px-3 py-1 rounded-md border border-slate-300 hover:border-brand-500/50 bg-white transition cursor-pointer"
                 >
                   Reset to default
                 </button>
@@ -320,11 +320,11 @@ export default function NumberMemoryGame() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
                     <span className="text-slate-700">Digits per Question</span>
-                    <span className="text-[#8c1d68] font-mono font-bold">{config.digitsCount}</span>
+                    <span className="text-brand-500 font-mono font-bold">{config.digitsCount}</span>
                   </div>
                   <input type="range" min={3} max={15} value={config.digitsCount}
                     onChange={e => updateConfig({ digitsCount: +e.target.value })}
-                    className="w-full accent-[#8c1d68] cursor-pointer" />
+                    className="w-full accent-brand-500 cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>3</span><span>9</span><span>15</span>
                   </div>
@@ -333,11 +333,11 @@ export default function NumberMemoryGame() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
                     <span className="text-slate-700">Questions per Test</span>
-                    <span className="text-[#8c1d68] font-mono font-bold">{config.totalQuestions}</span>
+                    <span className="text-brand-500 font-mono font-bold">{config.totalQuestions}</span>
                   </div>
                   <input type="range" min={1} max={25} value={config.totalQuestions}
                     onChange={e => updateConfig({ totalQuestions: +e.target.value })}
-                    className="w-full accent-[#8c1d68] cursor-pointer" />
+                    className="w-full accent-brand-500 cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>1</span><span>10</span><span>25</span>
                   </div>
@@ -346,11 +346,11 @@ export default function NumberMemoryGame() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
                     <span className="text-slate-700">Pause Between Numbers</span>
-                    <span className="text-[#8c1d68] font-mono font-bold">{fmtDelay(config.delayBetweenSec)}</span>
+                    <span className="text-brand-500 font-mono font-bold">{fmtDelay(config.delayBetweenSec)}</span>
                   </div>
                   <input type="range" min={0.175} max={2.5} step={0.025} value={config.delayBetweenSec}
                     onChange={e => updateConfig({ delayBetweenSec: +e.target.value })}
-                    className="w-full accent-[#8c1d68] cursor-pointer" />
+                    className="w-full accent-brand-500 cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>0.175s</span><span>1s</span><span>2.5s</span>
                   </div>
@@ -359,11 +359,11 @@ export default function NumberMemoryGame() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
                     <span className="text-slate-700">Speech Rate</span>
-                    <span className="text-[#8c1d68] font-mono font-bold">{config.speechRate.toFixed(1)}x</span>
+                    <span className="text-brand-500 font-mono font-bold">{config.speechRate.toFixed(1)}x</span>
                   </div>
                   <input type="range" min={0.6} max={1.8} step={0.1} value={config.speechRate}
                     onChange={e => updateConfig({ speechRate: +e.target.value })}
-                    className="w-full accent-[#8c1d68] cursor-pointer" />
+                    className="w-full accent-brand-500 cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>0.6x</span><span>1.0x</span><span>1.8x</span>
                   </div>
@@ -379,14 +379,14 @@ export default function NumberMemoryGame() {
         {/* PREPARE */}
         {stage === 'prepare' && (
           <div className="w-full flex flex-col items-center text-center pt-16 space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#600038] tracking-tight">Prepare for question...</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-brand-700 tracking-tight">Prepare for question...</h2>
           </div>
         )}
 
         {/* AUDIO */}
         {stage === 'audio' && (
           <div className="w-full flex flex-col items-center text-center pt-16 space-y-8">
-            <div className="flex items-center justify-center space-x-2 text-[#8c1d68] text-xl sm:text-2xl font-bold">
+            <div className="flex items-center justify-center space-x-2 text-brand-500 text-xl sm:text-2xl font-bold">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
               </svg>
@@ -410,7 +410,7 @@ export default function NumberMemoryGame() {
                 inputMode="numeric"
                 readOnly
                 value={mask}
-                className="w-full max-w-md text-center text-base sm:text-lg font-mono font-bold tracking-widest text-slate-900 border-2 border-[#8c1d68] rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#8c1d68]/30 shadow-sm bg-white cursor-default"
+                className="w-full max-w-md text-center text-base sm:text-lg font-mono font-bold tracking-widest text-slate-900 border-2 border-brand-500 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-500/30 shadow-sm bg-white cursor-default"
               />
             </div>
             <p className="text-xs text-slate-400">
@@ -423,14 +423,14 @@ export default function NumberMemoryGame() {
         {stage === 'results' && (
           <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-2xl pt-8">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#8c1d68]/10 flex items-center justify-center text-2xl">🎯</div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#600038]">Test Completed!</h3>
+              <div className="w-16 h-16 mx-auto rounded-full bg-brand-500/10 flex items-center justify-center text-2xl">🎯</div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-brand-700">Test Completed!</h3>
               <p className="text-sm text-slate-500">Here is how you performed on this sequence memory session:</p>
             </div>
             <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-xs text-slate-500 font-semibold uppercase">Score</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#8c1d68] mt-1 font-mono tabular-nums">{correctCount} / {questions.length}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-brand-500 mt-1 font-mono tabular-nums">{correctCount} / {questions.length}</div>
               </div>
               <div>
                 <div className="text-xs text-slate-500 font-semibold uppercase">Accuracy</div>
@@ -465,7 +465,7 @@ export default function NumberMemoryGame() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full justify-center pt-2">
               <button onClick={() => startNewTest(config)}
-                className="px-8 py-3 rounded-lg bg-[#8c1d68] hover:bg-[#751857] text-white font-bold text-sm shadow-md transition cursor-pointer">
+                className="px-8 py-3 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-md transition cursor-pointer">
                 Retake Test
               </button>
               <button onClick={() => setStage('start')}
@@ -498,7 +498,7 @@ export default function NumberMemoryGame() {
                 <circle
                   cx="58" cy="58" r={R}
                   fill="none"
-                  stroke={urgent ? '#e11d48' : '#8c1d68'}
+                  stroke={urgent ? '#e11d48' : 'var(--color-brand-500)'}
                   strokeWidth="5"
                   strokeDasharray={C}
                   strokeDashoffset={offset}
@@ -512,7 +512,7 @@ export default function NumberMemoryGame() {
                   fontSize="22"
                   fontWeight="700"
                   fontFamily="monospace"
-                  fill={urgent ? '#e11d48' : '#8c1d68'}
+                  fill={urgent ? '#e11d48' : 'var(--color-brand-500)'}
                 >
                   {timeStr}
                 </text>

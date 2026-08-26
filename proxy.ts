@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/games'];
+const PROTECTED_PATHS = ['/dashboard', '/training'];
 const AUTH_PATHS = ['/login', '/signup'];
 
 export async function proxy(request: NextRequest) {
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (isAuthPage && user) {
-    return NextResponse.redirect(new URL('/games', request.url));
+    return NextResponse.redirect(new URL('/training', request.url));
   }
 
   if (isProtected && !user) {
@@ -60,5 +60,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/games/:path*', '/login', '/signup'],
+  matcher: ['/dashboard/:path*', '/training/:path*', '/login', '/signup'],
 };

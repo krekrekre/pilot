@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await supabase.from('game_sessions').insert({
+    await supabase.from('training_sessions').insert({
       user_id: user.id,
-      game_slug: body.gameSlug,
+      module_slug: body.moduleSlug,
       score: body.score,
       total_questions: body.totalQuestions,
       accuracy: body.accuracy,

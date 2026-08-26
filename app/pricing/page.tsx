@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 const PLANS = [
   {
@@ -40,13 +41,13 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-screen">
       <nav className="w-full border-b border-slate-100 bg-white sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#8c1d68] flex items-center justify-center text-white text-sm font-bold">✈</div>
-            <span className="font-bold text-slate-900 tracking-tight text-sm">Pilot Prep</span>
+          <Link href="/" className="flex items-center gap-2.5 text-brand-500 hover:text-brand-600 transition-colors">
+            <Logo className="w-7 h-7" />
+            <span className="font-bold text-slate-900 tracking-tight text-base">CadetReady</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition px-3 py-1.5">Sign in</Link>
-            <Link href="/signup" className="text-sm font-bold bg-[#8c1d68] hover:bg-[#751857] text-white px-4 py-2 rounded-lg transition">Start free</Link>
+            <Link href="/signup" className="text-sm font-bold bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg transition">Start free</Link>
           </div>
         </div>
       </nav>
@@ -68,34 +69,34 @@ export default function PricingPage() {
                 key={plan.name}
                 className={`rounded-2xl p-7 flex flex-col gap-5 ${
                   plan.highlight
-                    ? 'bg-[#600038] text-white border border-[#8c1d68]'
+                    ? 'bg-brand-700 text-white border border-brand-500'
                     : 'bg-white border border-slate-200'
                 }`}
               >
                 <div>
-                  <div className={`text-xs font-bold uppercase tracking-widest mb-2 ${plan.highlight ? 'text-[#fce7f3]' : 'text-slate-500'}`}>
+                  <div className={`text-xs font-bold uppercase tracking-widest mb-2 ${plan.highlight ? 'text-brand-100' : 'text-slate-500'}`}>
                     {plan.name}
                   </div>
                   <div className={`text-3xl font-extrabold font-[family-name:var(--font-jetbrains-mono)] ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
                     {plan.price}
                   </div>
-                  <div className={`text-xs mt-0.5 ${plan.highlight ? 'text-[#fce7f3]' : 'text-slate-400'}`}>
+                  <div className={`text-xs mt-0.5 ${plan.highlight ? 'text-brand-100' : 'text-slate-400'}`}>
                     {plan.period}
-                    {plan.annualNote && <div className="mt-0.5 text-[#fce7f3]/80">{plan.annualNote}</div>}
+                    {plan.annualNote && <div className="mt-0.5 text-brand-100/80">{plan.annualNote}</div>}
                   </div>
                 </div>
 
                 <ul className="space-y-2.5 text-sm flex-1">
                   {plan.features.map(f => (
                     <li key={f} className="flex items-start gap-2.5">
-                      <span className={`text-xs mt-0.5 font-bold ${plan.highlight ? 'text-[#fce7f3]' : 'text-emerald-600'}`}>✓</span>
-                      <span className={plan.highlight ? 'text-[#fce7f3]' : 'text-slate-700'}>{f}</span>
+                      <span className={`text-xs mt-0.5 font-bold ${plan.highlight ? 'text-brand-100' : 'text-emerald-600'}`}>✓</span>
+                      <span className={plan.highlight ? 'text-brand-100' : 'text-slate-700'}>{f}</span>
                     </li>
                   ))}
                   {plan.missing.map(f => (
                     <li key={f} className="flex items-start gap-2.5 opacity-40">
                       <span className="text-xs mt-0.5 font-bold">—</span>
-                      <span className={plan.highlight ? 'text-[#fce7f3]' : 'text-slate-500'}>{f}</span>
+                      <span className={plan.highlight ? 'text-brand-100' : 'text-slate-500'}>{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -104,8 +105,8 @@ export default function PricingPage() {
                   href={plan.href}
                   className={`block text-center py-3 rounded-xl font-bold text-sm transition ${
                     plan.highlight
-                      ? 'bg-white text-[#8c1d68] hover:bg-[#fce7f3]'
-                      : 'bg-[#8c1d68] text-white hover:bg-[#751857]'
+                      ? 'bg-white text-brand-500 hover:bg-brand-100'
+                      : 'bg-brand-500 text-white hover:bg-brand-600'
                   }`}
                 >
                   {plan.cta}
