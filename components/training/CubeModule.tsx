@@ -32,26 +32,6 @@ function applyCommand(face: Face, cmd: Command): Face {
   return ROTATIONS[cmd][face] ?? face;
 }
 
-/* Matching CSS rotation for each command, chosen so the cube agrees with
-   ROTATIONS above: rotateX(90deg) carries the front face to the top, and
-   rotateY(90deg) carries it to the right. */
-const CSS_ROTATION: Record<Command, string> = {
-  up:    'rotateX(90deg)',
-  down:  'rotateX(-90deg)',
-  left:  'rotateY(90deg)',
-  right: 'rotateY(-90deg)',
-};
-
-const IDENTITY_TRANSFORM = 'rotateX(-18deg) rotateY(24deg)';
-
-/* Each new rotation is PREPENDED. CSS applies a transform list right to left,
-   so the leftmost entry acts in the fixed frame — which is what makes the cube
-   turn about world axes. Appending instead would rotate about the cube's own
-   axes and silently disagree with ROTATIONS once commands mix. */
-function pushRotation(transform: string, cmd: Command): string {
-  return `${CSS_ROTATION[cmd]} ${transform}`;
-}
-
 function resolveFace(start: Face, commands: Command[]): Face {
   return commands.reduce<Face>(applyCommand, start);
 }
@@ -71,7 +51,6 @@ interface Config {
   delayBetweenSec: number;
   speechRate: number;
   totalQuestions: number;
-  easyMode: boolean;
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -79,7 +58,6 @@ const DEFAULT_CONFIG: Config = {
   delayBetweenSec: 0.3,
   speechRate: 1.1,
   totalQuestions: 10,
-  easyMode: false,
 };
 
 type Stage = 'start' | 'prepare' | 'audio' | 'input' | 'results';
@@ -124,36 +102,6 @@ function fmtDelay(val: number) {
   return val.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + 's';
 }
 
-const FACE_PLACEMENT: Record<Face, string> = {
-  front:  'translateZ(var(--half))',
-  behind: 'rotateY(180deg) translateZ(var(--half))',
-  right:  'rotateY(90deg) translateZ(var(--half))',
-  left:   'rotateY(-90deg) translateZ(var(--half))',
-  top:    'rotateX(90deg) translateZ(var(--half))',
-  bottom: 'rotateX(-90deg) translateZ(var(--half))',
-};
-
-/* The mark is a sticker on one physical face: it rides along as the cube turns.
-   Which world position it currently occupies is tracked separately by
-   applyCommand and shown as the readout below the cube. */
-function Cube3D({ marked, transform, snap }: { marked: Face; transform: string; snap: boolean }) {
-  return (
-    <div className="cube-scene" aria-hidden="true">
-      <div className={`cube-body ${snap ? 'cube-body-snap' : ''}`} style={{ transform }}>
-        {FACES.map(face => (
-          <div
-            key={face}
-            className={`cube-face ${face === marked ? 'cube-face-marked' : ''}`}
-            style={{ transform: FACE_PLACEMENT[face] }}
-          >
-            {face === marked && <span className="cube-mark" />}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function CubeModule() {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [stage, setStage] = useState<Stage>('start');
@@ -163,13 +111,6 @@ export default function CubeModule() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600);
-
-  // Easy-mode visual state
-  const [liveFace, setLiveFace] = useState<Face | null>(null);
-  const [cubeTransform, setCubeTransform] = useState(IDENTITY_TRANSFORM);
-  const [cubeSnap, setCubeSnap] = useState(false);
-  // Sticky for the whole session: one easy-mode question disqualifies the run
-  const [easyModeUsed, setEasyModeUsed] = useState(false);
 
   const abortRef = useRef(false);
   const audioClips = useRef<Record<string, HTMLAudioElement>>({});
@@ -215,16 +156,6 @@ export default function CubeModule() {
     const rate = cfg.speechRate;
     const delayMs = cfg.delayBetweenSec * 1000;
 
-    /* Snap back to the start orientation. Without killing the transition the
-       cube slerps from wherever the previous question left it all the way to
-       identity, which looks like a random tumble before every question. */
-    setCubeSnap(true);
-    setCubeTransform(IDENTITY_TRANSFORM);
-    setLiveFace(null);
-    await sleep(60);
-    setCubeSnap(false);
-    if (abortRef.current) return;
-
     await playClip('initial_position', rate);
     if (abortRef.current) return;
     await sleep(250);
@@ -232,16 +163,12 @@ export default function CubeModule() {
 
     await playClip(q.start, rate);
     if (abortRef.current) return;
-    setLiveFace(q.start);
     await sleep(INITIAL_POSITION_PAUSE_MS);
 
     for (const cmd of q.commands) {
       if (abortRef.current) break;
       await playClip(cmd, rate);
       if (abortRef.current) break;
-      // Turn the cube as the command lands, then advance the tracked position
-      setCubeTransform(prev => pushRotation(prev, cmd));
-      setLiveFace(prev => (prev ? applyCommand(prev, cmd) : prev));
       await sleep(delayMs);
     }
   }, [playClip]);
@@ -256,7 +183,6 @@ export default function CubeModule() {
 
     setStage('audio');
     setIsPlayingAudio(true);
-    if (cfg.easyMode) setEasyModeUsed(true);
     await playQuestionAudio(qs[idx], cfg);
     setIsPlayingAudio(false);
     if (abortRef.current) return;
@@ -269,7 +195,6 @@ export default function CubeModule() {
   const startNewTest = useCallback((cfg: Config) => {
     cancelAudio();
     const qs: Question[] = Array.from({ length: cfg.totalQuestions }, () => generateQuestion(cfg.commandsCount));
-    setEasyModeUsed(false);
     setQuestions(qs);
     setCurrentAnswer(null);
     startQuestion(qs, 0, cfg);
@@ -328,13 +253,11 @@ export default function CubeModule() {
 
   const inTest = stage === 'prepare' || stage === 'audio' || stage === 'input';
 
-  // Record the finished session. Easy mode disqualifies the whole run, so a
-  // single assisted question keeps the entire session out of score history.
+  // Record the finished session.
   const postedRef = useRef(false);
   useEffect(() => {
     if (stage !== 'results') { postedRef.current = false; return; }
     if (postedRef.current) return;
-    if (easyModeUsed) return;
     if (questions.length === 0) return;
     postedRef.current = true;
 
@@ -349,7 +272,7 @@ export default function CubeModule() {
         config,
       }),
     }).catch(() => { /* a failed save must not break the results screen */ });
-  }, [stage, easyModeUsed, questions, config]);
+  }, [stage, questions, config]);
 
   // 10-minute countdown timer
   useEffect(() => {
@@ -495,22 +418,6 @@ export default function CubeModule() {
               </div>
               <p className="text-xs text-slate-400 mb-4">Customise the number of tasks and command length before you begin.</p>
 
-              <label className="flex items-start gap-3 mb-5 p-3 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-brand-500/40 transition">
-                <input
-                  type="checkbox"
-                  checked={config.easyMode}
-                  onChange={e => updateConfig({ easyMode: e.target.checked })}
-                  className="mt-0.5 w-4 h-4 accent-brand-500 cursor-pointer"
-                />
-                <span>
-                  <span className="block text-xs font-bold text-slate-700">Easy mode — show the rotating cube</span>
-                  <span className="block text-[11px] text-slate-400 leading-relaxed mt-0.5">
-                    Watch the cube turn as each command is read. For learning the mechanic —
-                    sessions using it are practice only and are not recorded.
-                  </span>
-                </span>
-              </label>
-
               <div className="grid grid-cols-2 gap-x-8 gap-y-5">
 
                 <div>
@@ -591,19 +498,6 @@ export default function CubeModule() {
             <div className="equalizer-container flex items-end justify-center gap-1.5 h-16 w-36">
               {[1,2,3,4,5].map(i => <div key={i} className={`eq-bar eq-bar-${i}`} />)}
             </div>
-
-            {config.easyMode && (
-              <div className="flex flex-col items-center gap-4 pt-2">
-                <Cube3D marked={questions[currentQIndex]?.start ?? 'front'} transform={cubeTransform} snap={cubeSnap} />
-                <p className="text-sm text-slate-500">
-                  Mark is at{' '}
-                  <span className="font-bold text-brand-500">
-                    {liveFace ? LABEL[liveFace] : '—'}
-                  </span>
-                </p>
-                <p className="text-[11px] text-slate-400">Practice only — this session will not be recorded.</p>
-              </div>
-            )}
           </div>
         )}
 
@@ -652,16 +546,6 @@ export default function CubeModule() {
               <h3 className="text-2xl sm:text-3xl font-bold text-brand-700">Test Completed!</h3>
               <p className="text-sm text-slate-500">Here is how you performed on this spatial orientation session:</p>
             </div>
-
-            {easyModeUsed && (
-              <div className="w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center">
-                <p className="text-xs font-bold text-amber-800">Not recorded</p>
-                <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
-                  Easy mode was on for at least one question, so this session is kept out of your
-                  score history. Turn it off to log a result.
-                </p>
-              </div>
-            )}
             <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-xs text-slate-500 font-semibold uppercase">Score</div>
