@@ -8,6 +8,7 @@ const MODULES = [
     desc: 'Listen to a digit sequence and recall it in order. Trains auditory working memory.',
     category: 'Working Memory',
     available: true,
+    proExam: true,
   },
   {
     slug: 'cube',
@@ -16,6 +17,25 @@ const MODULES = [
     desc: 'Track a position on an imagined cube through spoken rotation commands. Trains 3D mental rotation.',
     category: 'Spatial',
     available: true,
+    proExam: true,
+  },
+  {
+    slug: 'clock',
+    icon: '🕐',
+    title: 'Spatial Orientation (CLOCK)',
+    desc: 'Read the time from a rotated dial that shows only one hour number. Trains mental rotation and reference-frame shifting.',
+    category: 'Spatial',
+    available: true,
+    proExam: true,
+  },
+  {
+    slug: 'password',
+    icon: '🔑',
+    title: 'Symbol Pattern (PASSWORD)',
+    desc: 'Match a password of symbols against five words by the shape of their repeated letters. Trains abstract pattern matching under time pressure.',
+    category: 'Abstract Reasoning',
+    available: true,
+    proExam: true,
   },
   {
     slug: 'mental-arithmetic',
@@ -53,11 +73,16 @@ export default function TrainingPage() {
                 {g.icon}
               </div>
               <div className="flex flex-col gap-1.5 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
                   <h2 className="font-bold text-slate-900 text-sm">{g.title}</h2>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.available ? 'bg-brand-500/10 text-brand-500' : 'bg-slate-200 text-slate-400'}`}>
                     {g.available ? g.category : 'Coming soon'}
                   </span>
+                  {g.proExam && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wide">
+                      Pro Exam
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed">{g.desc}</p>
                 {g.available && (

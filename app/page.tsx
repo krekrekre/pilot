@@ -17,6 +17,13 @@ const FEATURES = [
     href: '/training/cube',
   },
   {
+    icon: '🕐',
+    title: 'Spatial Orientation (CLOCK)',
+    desc: 'Read the time from a rotated dial that shows only one hour number. Trains mental rotation and reference-frame shifting.',
+    badge: 'Available now',
+    href: '/training/clock',
+  },
+  {
     icon: '🔢',
     title: 'Mental Arithmetic',
     desc: 'Rapid-fire calculations under time pressure. Mirrors the numerical reasoning sections of PILAPT and COMPASS.',

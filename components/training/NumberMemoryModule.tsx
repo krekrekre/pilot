@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import SettingSlider from '@/components/training/SettingSlider';
 
 interface Question {
   target: number[];
@@ -317,57 +318,47 @@ export default function NumberMemoryModule() {
               <p className="text-xs text-slate-400 mb-4">Customise the number of tasks and digit length before you begin.</p>
               <div className="grid grid-cols-2 gap-x-8 gap-y-5">
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Digits per Question</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.digitsCount}</span>
-                  </div>
-                  <input type="range" min={3} max={15} value={config.digitsCount}
-                    onChange={e => updateConfig({ digitsCount: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>3</span><span>9</span><span>15</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Digits per Question"
+                  display={`${config.digitsCount}`}
+                  value={config.digitsCount}
+                  min={3}
+                  max={15}
+                  ticks={[{ value: 3, label: '3' }, { value: 9, label: '9' }, { value: 15, label: '15' }]}
+                  onChange={v => updateConfig({ digitsCount: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Questions per Test</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.totalQuestions}</span>
-                  </div>
-                  <input type="range" min={1} max={25} value={config.totalQuestions}
-                    onChange={e => updateConfig({ totalQuestions: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>1</span><span>10</span><span>25</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Questions per Test"
+                  display={`${config.totalQuestions}`}
+                  value={config.totalQuestions}
+                  min={1}
+                  max={25}
+                  ticks={[{ value: 1, label: '1' }, { value: 10, label: '10' }, { value: 25, label: '25' }]}
+                  onChange={v => updateConfig({ totalQuestions: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Pause Between Numbers</span>
-                    <span className="text-brand-500 font-mono font-bold">{fmtDelay(config.delayBetweenSec)}</span>
-                  </div>
-                  <input type="range" min={0.175} max={2.5} step={0.025} value={config.delayBetweenSec}
-                    onChange={e => updateConfig({ delayBetweenSec: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>0.175s</span><span>1s</span><span>2.5s</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Pause Between Numbers"
+                  display={fmtDelay(config.delayBetweenSec)}
+                  value={config.delayBetweenSec}
+                  min={0.175}
+                  max={2.5}
+                  step={0.025}
+                  ticks={[{ value: 0.175, label: '0.175s' }, { value: 1, label: '1s' }, { value: 2.5, label: '2.5s' }]}
+                  onChange={v => updateConfig({ delayBetweenSec: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Speech Rate</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.speechRate.toFixed(1)}x</span>
-                  </div>
-                  <input type="range" min={0.6} max={1.8} step={0.1} value={config.speechRate}
-                    onChange={e => updateConfig({ speechRate: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>0.6x</span><span>1.0x</span><span>1.8x</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Speech Rate"
+                  display={`${config.speechRate.toFixed(1)}x`}
+                  value={config.speechRate}
+                  min={0.6}
+                  max={1.8}
+                  step={0.1}
+                  ticks={[{ value: 0.6, label: '0.6x' }, { value: 1, label: '1.0x' }, { value: 1.8, label: '1.8x' }]}
+                  onChange={v => updateConfig({ speechRate: v })}
+                />
 
               </div>
               <p className="text-xs text-slate-500 mt-4">Use default settings for the most accurate test simulation</p>

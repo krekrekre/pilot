@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import SettingSlider from '@/components/training/SettingSlider';
+import Image from 'next/image';
 
 /* ── Cube model ──────────────────────────────────────────────────────────
    up:    front → top    → behind → bottom → front   (left/right unchanged)
@@ -370,6 +372,22 @@ export default function CubeModule() {
               <p className="text-sm text-slate-600">Good luck!</p>
             </div>
 
+            {/* Which axis each command pivots around */}
+            <div className="w-full text-left">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">The two pivot axes</h3>
+              <p className="text-xs text-slate-400 mb-3">Left and Right swing the cube around the vertical axis. Up and Down tip it around the lateral axis.</p>
+              <div className="border border-slate-200 bg-white p-3 max-w-sm mx-auto">
+                <Image
+                  src="/cube-pivot-axes-v2.png"
+                  alt="LEFT and RIGHT pivot the cube around the vertical axis; UP and DOWN pivot it around the lateral axis."
+                  width={771}
+                  height={678}
+                  className="w-full h-auto"
+                  priority
+                />
+              </div>
+            </div>
+
             {/* How the cube moves */}
             <div className="w-full text-left">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">How the cube moves</h3>
@@ -420,57 +438,47 @@ export default function CubeModule() {
 
               <div className="grid grid-cols-2 gap-x-8 gap-y-5">
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Commands per Question</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.commandsCount}</span>
-                  </div>
-                  <input type="range" min={1} max={15} value={config.commandsCount}
-                    onChange={e => updateConfig({ commandsCount: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>1</span><span>8</span><span>15</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Commands per Question"
+                  display={`${config.commandsCount}`}
+                  value={config.commandsCount}
+                  min={1}
+                  max={15}
+                  ticks={[{ value: 1, label: '1' }, { value: 8, label: '8' }, { value: 15, label: '15' }]}
+                  onChange={v => updateConfig({ commandsCount: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Questions per Test</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.totalQuestions}</span>
-                  </div>
-                  <input type="range" min={1} max={25} value={config.totalQuestions}
-                    onChange={e => updateConfig({ totalQuestions: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>1</span><span>10</span><span>25</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Questions per Test"
+                  display={`${config.totalQuestions}`}
+                  value={config.totalQuestions}
+                  min={1}
+                  max={25}
+                  ticks={[{ value: 1, label: '1' }, { value: 10, label: '10' }, { value: 25, label: '25' }]}
+                  onChange={v => updateConfig({ totalQuestions: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Pause Between Commands</span>
-                    <span className="text-brand-500 font-mono font-bold">{fmtDelay(config.delayBetweenSec)}</span>
-                  </div>
-                  <input type="range" min={0.2} max={3} step={0.05} value={config.delayBetweenSec}
-                    onChange={e => updateConfig({ delayBetweenSec: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>0.2s</span><span>1.5s</span><span>3s</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Pause Between Commands"
+                  display={fmtDelay(config.delayBetweenSec)}
+                  value={config.delayBetweenSec}
+                  min={0.2}
+                  max={3}
+                  step={0.05}
+                  ticks={[{ value: 0.2, label: '0.2s' }, { value: 1.5, label: '1.5s' }, { value: 3, label: '3s' }]}
+                  onChange={v => updateConfig({ delayBetweenSec: v })}
+                />
 
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span className="text-slate-700">Speech Rate</span>
-                    <span className="text-brand-500 font-mono font-bold">{config.speechRate.toFixed(1)}x</span>
-                  </div>
-                  <input type="range" min={0.6} max={1.8} step={0.1} value={config.speechRate}
-                    onChange={e => updateConfig({ speechRate: +e.target.value })}
-                    className="w-full accent-brand-500 cursor-pointer" />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>0.6x</span><span>1.0x</span><span>1.8x</span>
-                  </div>
-                </div>
+                <SettingSlider
+                  label="Speech Rate"
+                  display={`${config.speechRate.toFixed(1)}x`}
+                  value={config.speechRate}
+                  min={0.6}
+                  max={1.8}
+                  step={0.1}
+                  ticks={[{ value: 0.6, label: '0.6x' }, { value: 1, label: '1.0x' }, { value: 1.8, label: '1.8x' }]}
+                  onChange={v => updateConfig({ speechRate: v })}
+                />
 
               </div>
               <p className="text-xs text-slate-500 mt-4">Use default settings for the most accurate test simulation</p>

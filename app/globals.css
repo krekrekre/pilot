@@ -54,3 +54,73 @@
 }
 .numpad-btn:hover  { background-color: #f1f5f9; border-color: #cbd5e1; }
 .numpad-btn:active { background-color: #e2e8f0; transform: translateY(1px); }
+
+/* ── Settings slider ──────────────────────────────────────────────────────
+   The rail, the filled portion and the ticks are all drawn by SettingSlider;
+   the native input keeps only its thumb, and stays on top so that dragging,
+   arrow keys and touch behave exactly as the platform intends.
+
+   Square by design — see the sharp edges block below. THUMB_W in
+   SettingSlider.tsx must match the width here, or the fill will stop short
+   of the thumb.
+------------------------------------------------------------------------- */
+.setting-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+.setting-slider:focus { outline: none; }
+
+/* The visible rail is a sibling div, so the native tracks stay invisible */
+.setting-slider::-webkit-slider-runnable-track { height: 22px; background: transparent; }
+.setting-slider::-moz-range-track { height: 22px; background: transparent; }
+
+.setting-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 20px;
+  margin-top: 1px;   /* centres the thumb on the 22px track */
+  background: var(--color-brand-500);
+  border: none;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.3);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.setting-slider::-moz-range-thumb {
+  width: 10px;
+  height: 20px;
+  background: var(--color-brand-500);
+  border: none;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.3);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.setting-slider:hover::-webkit-slider-thumb { background: var(--color-brand-600); }
+.setting-slider:hover::-moz-range-thumb     { background: var(--color-brand-600); }
+.setting-slider:active::-webkit-slider-thumb { background: var(--color-brand-700); }
+.setting-slider:active::-moz-range-thumb     { background: var(--color-brand-700); }
+.setting-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgb(29 78 216 / 0.35); }
+.setting-slider:focus-visible::-moz-range-thumb     { box-shadow: 0 0 0 3px rgb(29 78 216 / 0.35); }
+
+/* ── SHARP EDGES EXPERIMENT ───────────────────────────────────────────────
+   Kills every corner radius project-wide. Delete this whole block to go
+   back to rounded corners — nothing else was changed to make this work.
+   SVG shapes (the clock face, the timer ring) are unaffected: they are
+   geometry, not boxes, so they stay round.
+------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* Range thumbs sit in pseudo-elements that `*` cannot reach, and each vendor
+   selector has to stand alone or the rule is dropped as invalid. */
+input[type="range"]::-webkit-slider-thumb { border-radius: 0 !important; }
+input[type="range"]::-moz-range-thumb     { border-radius: 0 !important; }
+input[type="range"]::-webkit-slider-runnable-track { border-radius: 0 !important; }
+input[type="range"]::-moz-range-track     { border-radius: 0 !important; }
