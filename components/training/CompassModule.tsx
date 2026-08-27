@@ -3,25 +3,26 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import SettingSlider from '@/components/training/SettingSlider';
 
-/* ── Clock model ─────────────────────────────────────────────────────────
-   Positions are screen slots: 0 = top, then clockwise in 30° steps.
-   `offset` rotates the dial, so the hour printed at slot 0 is not always 12.
+/* ── Compass model ───────────────────────────────────────────────────────
+   Slots are screen positions: 0 = top, then clockwise in 45° steps.
+   `offset` rotates the rose, so the direction sitting at slot 0 is not
+   always N — that rotation is the whole task.
 
-   hourAt(pos) = ((pos + offset) mod 12) or 12
+   dirAt(slot) = DIRS[(slot + offset) mod 8]
 
-   Both hands land exactly on a dash — the minute hand never sits between
-   marks, so every answer is a whole 5-minute increment.
+   Exactly one slot is marked with a dash and its name; every other slot is
+   left blank, so the name has to be carried round the dial by counting.
 ------------------------------------------------------------------------ */
 
+/* Clockwise from the top. The answer list is shown in this same order. */
+const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+
 interface Question {
-  offset: number;      // 0..11 — dial rotation
-  labelPos: number;    // slot showing the single printed number
-  hourPos: number;     // slot the hour hand points at
-  minutePos: number;   // slot the minute hand points at
-  hour: number;        // 1..12
-  minute: number;      // 0,5,…,55
-  userHour: number | null;
-  userMinute: number | null;
+  offset: number;             // 0..7 — dial rotation
+  labelSlot: number;          // slot carrying the single dash + name
+  arrowSlot: number;          // slot the needle points at
+  answer: number;             // index into DIRS
+  userAnswer: number | null;
   isCorrect: boolean;
 }
 
@@ -37,20 +38,20 @@ const DEFAULT_CONFIG: Config = {
 
 type Stage = 'start' | 'question' | 'results';
 
-function hourAt(pos: number, offset: number): number {
-  return ((pos + offset) % 12) || 12;
+function dirAt(slot: number, offset: number): number {
+  return (slot + offset) % 8;
 }
 
 function loadConfig(): Config {
   if (typeof window === 'undefined') return { ...DEFAULT_CONFIG };
   try {
-    const saved = localStorage.getItem('clock_config');
+    const saved = localStorage.getItem('compass_config');
     return saved ? { ...DEFAULT_CONFIG, ...JSON.parse(saved) } : { ...DEFAULT_CONFIG };
   } catch { return { ...DEFAULT_CONFIG }; }
 }
 
 function saveConfig(config: Config) {
-  try { localStorage.setItem('clock_config', JSON.stringify(config)); } catch {}
+  try { localStorage.setItem('compass_config', JSON.stringify(config)); } catch {}
 }
 
 function pick<T>(arr: T[]): T {
@@ -58,81 +59,67 @@ function pick<T>(arr: T[]): T {
 }
 
 function generateQuestion(): Question {
-  const offset = Math.floor(Math.random() * 12);
-  const slots = Array.from({ length: 12 }, (_, i) => i);
+  const offset = Math.floor(Math.random() * 8);
+  const slots = Array.from({ length: 8 }, (_, i) => i);
 
-  const labelPos = pick(slots);
-  // Neither hand may point at the slot that already shows a number …
-  const free = slots.filter(p => p !== labelPos);
-  const hourPos = pick(free);
-  // … and the two hands must not overlap, or the dial would be unreadable.
-  const minutePos = pick(free.filter(p => p !== hourPos));
+  const labelSlot = pick(slots);
+  // The needle may not sit on the marked slot, or the answer could be read
+  // straight off the label instead of worked out.
+  const arrowSlot = pick(slots.filter(s => s !== labelSlot));
 
   return {
     offset,
-    labelPos,
-    hourPos,
-    minutePos,
-    hour: hourAt(hourPos, offset),
-    minute: (hourAt(minutePos, offset) % 12) * 5,
-    userHour: null,
-    userMinute: null,
+    labelSlot,
+    arrowSlot,
+    answer: dirAt(arrowSlot, offset),
+    userAnswer: null,
     isCorrect: false,
   };
 }
 
-/* The answer is one field holding four digits — 0525. The colon belongs to the
-   mask, not to the value, so it can never be typed over or backspaced away. */
-function digitsOnly(raw: string): string {
-  return raw.replace(/\D/g, '').slice(0, 4);
-}
-
-function maskTime(digits: string): string {
-  if (digits.length === 0) return '';
-  if (digits.length < 2) return digits;
-  // The colon appears as soon as the hour is complete, and stays put
-  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
-function fmtTime(h: number | null, m: number | null) {
-  if (h === null || m === null) return '—';
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+function fmtDir(i: number | null) {
+  return i === null ? '—' : DIRS[i];
 }
 
 function fmtDuration(sec: number) {
   return `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`;
 }
 
-/* ── Clock face ──────────────────────────────────────────────────────── */
+/* ── Compass face ────────────────────────────────────────────────────── */
 
-const CENTER = 110;   // viewBox is 220 — the numbers sit outside the dial
-const DIAL_R = 84;
+const CENTER = 120;   // viewBox is 240 — the name sits outside the ring
+const RING_R = 72;
 const INK = '#0f172a';
 
-const HOUR_LEN = 46;
-const MINUTE_LEN = 70;
+const DASH_OUT = 15;  // how far the single dash reaches past the ring
+const LABEL_R = 102;
 
-function polar(pos: number, r: number): [number, number] {
-  const a = ((pos * 30) - 90) * Math.PI / 180;
+function polar(slot: number, r: number): [number, number] {
+  const a = ((slot * 45) - 90) * Math.PI / 180;
   return [CENTER + r * Math.cos(a), CENTER + r * Math.sin(a)];
 }
 
-/* Both hands are the same arrow — only the length separates hour from minute. */
-function Hand({ pos, length }: { pos: number; length: number }) {
-  const a = ((pos * 30) - 90) * Math.PI / 180;
+/* A needle, not a hand: it runs across the dial through the centre, so the
+   tail is as much a cue as the head. */
+function Needle({ slot }: { slot: number }) {
+  const a = ((slot * 45) - 90) * Math.PI / 180;
   const dx = Math.cos(a), dy = Math.sin(a);
-  const HEAD = 16, HALF = 7;
+  // LEN stops just inside the ring's inner edge, so the head touches the
+  // circle without breaking through it.
+  const TAIL = 58, LEN = 69, HEAD = 22, HALF = 9;
 
-  const tipX = CENTER + dx * length;
-  const tipY = CENTER + dy * length;
+  const tailX = CENTER - dx * TAIL;
+  const tailY = CENTER - dy * TAIL;
+  const tipX = CENTER + dx * LEN;
+  const tipY = CENTER + dy * LEN;
   // The shaft stops where the head begins, so it never shows through the tip
-  const baseX = CENTER + dx * (length - HEAD);
-  const baseY = CENTER + dy * (length - HEAD);
+  const baseX = CENTER + dx * (LEN - HEAD);
+  const baseY = CENTER + dy * (LEN - HEAD);
   const px = -dy, py = dx;
 
   return (
     <g>
-      <line x1={CENTER} y1={CENTER} x2={baseX} y2={baseY}
+      <line x1={tailX} y1={tailY} x2={baseX} y2={baseY}
         stroke={INK} strokeWidth={5} strokeLinecap="round" />
       <polygon
         points={`${tipX},${tipY} ${baseX + px * HALF},${baseY + py * HALF} ${baseX - px * HALF},${baseY - py * HALF}`}
@@ -142,107 +129,87 @@ function Hand({ pos, length }: { pos: number; length: number }) {
   );
 }
 
-function ClockFace({ q, size = 300 }: { q: Question; size?: number }) {
-  const [lx, ly] = polar(q.labelPos, 100);
+function CompassFace({ q, size = 300 }: { q: Question; size?: number }) {
+  const [dx1, dy1] = polar(q.labelSlot, RING_R);
+  const [dx2, dy2] = polar(q.labelSlot, RING_R + DASH_OUT);
+  const [lx, ly] = polar(q.labelSlot, LABEL_R);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 220 220" role="img" aria-label="Clock face">
-      <circle cx={CENTER} cy={CENTER} r={DIAL_R} fill="#ffffff" stroke={INK} strokeWidth={3} />
+    <svg width={size} height={size} viewBox="0 0 240 240" role="img" aria-label="Compass">
+      <circle cx={CENTER} cy={CENTER} r={RING_R} fill="#ffffff" stroke={INK} strokeWidth={6} />
 
-      {Array.from({ length: 12 }, (_, p) => {
-        // Top / right / bottom / left get the long dashes. They stop exactly at
-        // the minute arrow's reach, so the tip meets the dash without crossing it.
-        const cardinal = p % 3 === 0;
-        const [x1, y1] = polar(p, cardinal ? MINUTE_LEN : DIAL_R - 9);
-        const [x2, y2] = polar(p, DIAL_R);
-        return (
-          <line key={p} x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke={INK} strokeWidth={cardinal ? 4 : 3} />
-        );
-      })}
+      {/* The one and only marked point on the dial */}
+      <line x1={dx1} y1={dy1} x2={dx2} y2={dy2} stroke={INK} strokeWidth={5} strokeLinecap="round" />
 
       <text
         x={lx} y={ly}
         textAnchor="middle" dominantBaseline="central"
-        fontSize={20} fontWeight={800} fill={INK}
+        fontSize={19} fontWeight={800} fill={INK}
         fontFamily="var(--font-mono), monospace"
       >
-        {hourAt(q.labelPos, q.offset)}
+        {DIRS[dirAt(q.labelSlot, q.offset)]}
       </text>
 
-      <Hand pos={q.minutePos} length={MINUTE_LEN} />
-      <Hand pos={q.hourPos} length={HOUR_LEN} />
-
-      <circle cx={CENTER} cy={CENTER} r={5.5} fill={INK} />
+      <Needle slot={q.arrowSlot} />
     </svg>
   );
 }
 
-/* Fixed illustration for the start screen: the printed 2 sits at the
-   lower-right dash, the short arrow is on 10, the long arrow on 6 → 10:30. */
+/* Fixed illustration for the start screen: NW is marked at the right-hand
+   slot, the needle points one slot anticlockwise from it → W. */
 const EXAMPLE_Q: Question = {
-  offset: 10, labelPos: 4, hourPos: 0, minutePos: 8,
-  hour: 10, minute: 30, userHour: null, userMinute: null, isCorrect: false,
+  offset: 5, labelSlot: 2, arrowSlot: 1,
+  answer: 6, userAnswer: null, isCorrect: false,
 };
 
 /* ── Module ──────────────────────────────────────────────────────────── */
 
-export default function ClockModule() {
+export default function CompassModule() {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [stage, setStage] = useState<Stage>('start');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [timeInput, setTimeInput] = useState('');
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(DEFAULT_CONFIG.testDurationMin * 60);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { setConfig(loadConfig()); }, []);
 
-  // Hour is readable at two digits; minutes only once all four are in
-  const hourNum = timeInput.length >= 2 ? parseInt(timeInput.slice(0, 2), 10) : null;
-  const minuteNum = timeInput.length === 4 ? parseInt(timeInput.slice(2), 10) : null;
-  const hourValid = hourNum !== null && hourNum >= 1 && hourNum <= 12;
-  const minuteValid = minuteNum !== null && minuteNum >= 0 && minuteNum <= 59;
-  const answerReady = timeInput.length === 4 && hourValid && minuteValid;
-  const showInvalid = (hourNum !== null && !hourValid) || (minuteNum !== null && !minuteValid);
-
-  // An incomplete entry is recorded as no answer at all
-  const parsedHour = answerReady ? hourNum : null;
-  const parsedMinute = answerReady ? minuteNum : null;
+  const currentQ = questions[currentQIndex];
+  const answerReady = !!currentQ && currentQ.userAnswer !== null;
 
   const startNewTest = useCallback((cfg: Config) => {
     const qs = Array.from({ length: cfg.totalQuestions }, () => generateQuestion());
     setQuestions(qs);
     setCurrentQIndex(0);
-    setTimeInput('');
     // Set here too, so the clock never flashes the previous duration for a frame
     setTimeLeft(cfg.testDurationMin * 60);
     setStage('question');
-    setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
-  const submitAnswer = useCallback((qs: Question[], idx: number, h: number | null, m: number | null) => {
-    return qs.map((q, i) => {
-      if (i !== idx) return q;
-      return { ...q, userHour: h, userMinute: m, isCorrect: h === q.hour && m === q.minute };
-    });
+  /* One pick at a time — choosing again replaces the previous mark. */
+  const selectDir = useCallback((dir: number) => {
+    setQuestions(prev => prev.map((q, i) =>
+      i === currentQIndex ? { ...q, userAnswer: dir } : q
+    ));
+  }, [currentQIndex]);
+
+  const gradeAnswer = useCallback((qs: Question[], idx: number) => {
+    return qs.map((q, i) =>
+      i === idx ? { ...q, isCorrect: q.userAnswer === q.answer } : q
+    );
   }, []);
 
   const handleNext = useCallback(() => {
     if (!answerReady) return;
-    const updated = submitAnswer(questions, currentQIndex, parsedHour, parsedMinute);
-    setQuestions(updated);
+    setQuestions(prev => gradeAnswer(prev, currentQIndex));
     if (currentQIndex + 1 < config.totalQuestions) {
       setCurrentQIndex(currentQIndex + 1);
-      setTimeInput('');
-      setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       setStage('results');
     }
-  }, [answerReady, questions, currentQIndex, parsedHour, parsedMinute, config.totalQuestions, submitAnswer]);
+  }, [answerReady, currentQIndex, config.totalQuestions, gradeAnswer]);
 
   const confirmCancel = useCallback(() => {
     setCancelModalOpen(false);
@@ -258,6 +225,18 @@ export default function ClockModule() {
   }, []);
 
   const inTest = stage === 'question';
+
+  // Number keys pick a direction, Enter moves on — no reaching for the mouse
+  useEffect(() => {
+    if (!inTest) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleNext(); return; }
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= DIRS.length) { e.preventDefault(); selectDir(n - 1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [inTest, handleNext, selectDir]);
 
   const totalQ = config.totalQuestions;
   const qNum = currentQIndex + 1;
@@ -277,7 +256,7 @@ export default function ClockModule() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        moduleSlug: 'clock',
+        moduleSlug: 'compass',
         score: questions.filter(q => q.isCorrect).length,
         totalQuestions: questions.length,
         accuracy: Math.round((questions.filter(q => q.isCorrect).length / questions.length) * 100),
@@ -308,10 +287,10 @@ export default function ClockModule() {
   // Auto-end test when time expires
   useEffect(() => {
     if (timeLeft === 0 && inTest) {
-      setQuestions(prev => submitAnswer(prev, currentQIndex, parsedHour, parsedMinute));
+      setQuestions(prev => gradeAnswer(prev, currentQIndex));
       setStage('results');
     }
-  }, [timeLeft, inTest, submitAnswer, currentQIndex, parsedHour, parsedMinute]);
+  }, [timeLeft, inTest, gradeAnswer, currentQIndex]);
 
   // Hide the app-level navbar during an active test
   useEffect(() => {
@@ -320,8 +299,6 @@ export default function ClockModule() {
     nav.style.display = inTest ? 'none' : '';
     return () => { nav.style.display = ''; };
   }, [inTest]);
-
-  const currentQ = questions[currentQIndex];
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-800 antialiased select-none font-sans">
@@ -358,14 +335,18 @@ export default function ClockModule() {
       )}
 
       {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col items-center justify-start max-w-4xl mx-auto w-full px-4 pt-12 pb-40">
+      {/* The test screen sits high and ends flush — the compass is the first
+          thing read, and the cancel button is pinned to its own corner rather
+          than following the list. The start and results screens are ordinary
+          pages, so they keep padding under their last row of buttons. */}
+      <main className={`flex-1 flex flex-col items-center justify-start max-w-4xl mx-auto w-full px-4 ${inTest ? 'pt-4' : 'pt-12 pb-16'}`}>
 
         {/* START */}
         {stage === 'start' && (
           <div className="w-full flex flex-col items-center text-center space-y-6 max-w-2xl">
             <div className="text-left w-full space-y-3">
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Spatial Orientation module (CLOCK)</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Spatial Orientation module (COMPASS)</h2>
                 <button
                   onClick={() => startNewTest(config)}
                   className="shrink-0 px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-md transition cursor-pointer"
@@ -373,9 +354,9 @@ export default function ClockModule() {
                   Start module
                 </button>
               </div>
-              <p className="text-sm text-slate-600">This module will assess your ability to re-orient a rotated dial and read it under time pressure.</p>
-              <p className="text-sm text-slate-600">Each task shows a clock with twelve dashes but only <span className="font-semibold text-slate-800">one printed number</span>, placed at a random slot — 12 is rarely at the top. Use that single number as your reference to work out where every other hour sits, then read the time off the two hands.</p>
-              <p className="text-sm text-slate-600">Both arrows always land exactly on a dash, so every answer is a whole 5-minute increment. The shorter arrow is the hour, the longer one the minutes. Neither ever points at the printed number.</p>
+              <p className="text-sm text-slate-600">This module will assess your ability to re-orient a rotated compass and read a bearing off it under time pressure.</p>
+              <p className="text-sm text-slate-600">Each task shows a compass with <span className="font-semibold text-slate-800">one marked point</span>, placed at a random spot on the dial — north is rarely at the top. Use that single name as your reference to work out where the other seven directions sit, then read off where the needle points.</p>
+              <p className="text-sm text-slate-600">The eight directions always run clockwise — N, NE, E, SE, S, SW, W, NW — and the needle always lands exactly on one of them. It never points at the marked direction itself.</p>
               <p className="text-sm font-bold text-slate-800">NO aid is allowed for this module.</p>
               <p className="text-sm text-slate-600">Good luck!</p>
             </div>
@@ -385,20 +366,20 @@ export default function ClockModule() {
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Example</h3>
               <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 flex flex-col sm:flex-row items-center gap-6">
                 <div className="shrink-0">
-                  <ClockFace q={EXAMPLE_Q} size={190} />
+                  <CompassFace q={EXAMPLE_Q} size={190} />
                 </div>
                 <div className="space-y-2.5">
                   <p className="text-[13px] text-slate-600 leading-relaxed">
-                    The only printed number is <span className="font-bold text-slate-900">2</span>, and it sits at the lower-right dash. Counting clockwise from there, the dash at the top is <span className="font-bold text-slate-900">10</span>.
+                    The only marked point is <span className="font-bold text-slate-900">NW</span>, and it sits at the right-hand edge of the dial — so the whole compass has been turned.
                   </p>
                   <p className="text-[13px] text-slate-600 leading-relaxed">
-                    The <span className="font-semibold text-slate-800">shorter arrow</span> points at that top dash, so the hour is <span className="font-bold text-slate-900">10</span>.
+                    Directions run clockwise, so the point one step <span className="font-semibold text-slate-800">clockwise</span> from NW is N, the next is NE, and so on round the dial.
                   </p>
                   <p className="text-[13px] text-slate-600 leading-relaxed">
-                    The <span className="font-semibold text-slate-800">longer arrow</span> points four dashes clockwise from the 2, which is <span className="font-bold text-slate-900">6</span> — and 6 × 5 = <span className="font-bold text-slate-900">30</span> minutes.
+                    The needle points one step <span className="font-semibold text-slate-800">anticlockwise</span> from the NW mark, and the direction before NW is <span className="font-bold text-slate-900">W</span>.
                   </p>
                   <p className="text-[13px] text-slate-700 font-bold pt-1">
-                    You would type 10 : 30
+                    You would select W
                   </p>
                 </div>
               </div>
@@ -448,46 +429,40 @@ export default function ClockModule() {
 
         {/* QUESTION */}
         {stage === 'question' && currentQ && (
-          <div className="w-full flex flex-col items-center space-y-6">
-            <p className="text-sm text-slate-700">What time is shown on the clock?</p>
+          <div className="w-full flex flex-col items-center space-y-3">
+            <CompassFace q={currentQ} size={360} />
 
-            <ClockFace q={currentQ} size={300} />
+            <p className="text-sm text-slate-700">In which direction does the compass needle point?</p>
 
-            <div className="flex flex-col items-center gap-1.5">
-              <label htmlFor="clock-time" className="text-xs font-bold text-slate-700">Time</label>
-              <input
-                ref={inputRef}
-                id="clock-time"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="--:--"
-                value={maskTime(timeInput)}
-                onChange={e => setTimeInput(digitsOnly(e.target.value))}
-                onKeyDown={e => {
-                  if (e.key === 'Backspace' || e.key === 'Delete') {
-                    // Drop a digit, never the colon
-                    e.preventDefault();
-                    setTimeInput(d => d.slice(0, -1));
-                    return;
-                  }
-                  if (e.key === 'Enter') { e.preventDefault(); handleNext(); }
-                }}
-                // Entry is strictly left to right, so the caret stays at the end
-                onSelect={e => {
-                  const el = e.currentTarget;
-                  const end = el.value.length;
-                  if (el.selectionStart !== end || el.selectionEnd !== end) el.setSelectionRange(end, end);
-                }}
-                className={`w-48 text-center text-3xl tracking-[0.15em] font-mono font-bold text-slate-900 border-2 rounded-md py-3 px-3 focus:outline-none focus:ring-2 bg-white placeholder:text-slate-300 ${
-                  showInvalid
-                    ? 'border-rose-500 focus:ring-rose-500/30'
-                    : 'border-brand-500 focus:ring-brand-500/30'
-                }`}
-              />
+            <div className="w-full max-w-xl space-y-2">
+              {DIRS.map((dir, i) => {
+                const on = currentQ.userAnswer === i;
+                return (
+                  <button
+                    key={dir}
+                    onClick={() => selectDir(i)}
+                    aria-pressed={on}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border-2 transition cursor-pointer ${
+                      on
+                        ? 'border-brand-500 bg-brand-500/8'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    {/* aria-pressed on the button carries the state — the dot
+                        is decoration and is present even when unpicked */}
+                    <span aria-hidden="true" className={`w-[18px] h-[18px] shrink-0 rounded-full border-2 flex items-center justify-center ${
+                      on ? 'border-brand-500' : 'border-slate-300'
+                    }`}>
+                      <span className={`w-2.5 h-2.5 rounded-full ${on ? 'bg-brand-500' : 'bg-transparent'}`} />
+                    </span>
+                    <span className="text-sm font-medium tracking-[0.1em] text-slate-900">{dir}</span>
+                    <span className="ml-auto text-[10px] font-mono text-slate-300">{i + 1}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <p className="text-xs text-slate-400">Type four digits — 0525 becomes 05:25. Minutes are always a multiple of 5.</p>
+            <p className="text-xs text-slate-400">Keys 1–{DIRS.length} pick a direction, Enter moves on.</p>
           </div>
         )}
 
@@ -495,9 +470,9 @@ export default function ClockModule() {
         {stage === 'results' && (
           <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-2xl pt-8">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-full bg-brand-500/10 flex items-center justify-center text-2xl">🕐</div>
+              <div className="w-16 h-16 mx-auto rounded-full bg-brand-500/10 flex items-center justify-center text-2xl">🧭</div>
               <h3 className="text-2xl sm:text-3xl font-bold text-brand-700">Test Completed!</h3>
-              <p className="text-sm text-slate-500">Here is how you performed on this clock reading session:</p>
+              <p className="text-sm text-slate-500">Here is how you performed on this compass reading session:</p>
             </div>
             <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 grid grid-cols-3 gap-4 text-center">
               <div>
@@ -518,7 +493,7 @@ export default function ClockModule() {
                 <thead>
                   <tr className="bg-slate-100 border-b border-slate-200">
                     <th className="px-3 py-2.5 text-left font-bold text-slate-700 w-8">#</th>
-                    <th className="px-3 py-2.5 text-left font-bold text-slate-700">Clock</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-700">Compass</th>
                     <th className="px-3 py-2.5 text-left font-bold text-slate-700">Reference</th>
                     <th className="px-3 py-2.5 text-left font-bold text-slate-700">Answer</th>
                     <th className="px-3 py-2.5 text-left font-bold text-slate-700">Yours</th>
@@ -528,11 +503,11 @@ export default function ClockModule() {
                   {questions.map((q, i) => (
                     <tr key={i} className={`${q.isCorrect ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-rose-50 hover:bg-rose-100'} transition`}>
                       <td className="px-3 py-3 font-semibold text-slate-500">{i + 1}</td>
-                      <td className="px-2 py-2"><ClockFace q={q} size={92} /></td>
-                      <td className="px-3 py-3 font-mono text-[11px] text-slate-500">{hourAt(q.labelPos, q.offset)}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-800">{fmtTime(q.hour, q.minute)}</td>
+                      <td className="px-2 py-2"><CompassFace q={q} size={92} /></td>
+                      <td className="px-3 py-3 font-mono text-[11px] text-slate-500">{DIRS[dirAt(q.labelSlot, q.offset)]}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-800">{fmtDir(q.answer)}</td>
                       <td className={`px-3 py-3 font-mono font-bold ${q.isCorrect ? 'text-emerald-700' : 'text-rose-600'}`}>
-                        {fmtTime(q.userHour, q.userMinute)}
+                        {fmtDir(q.userAnswer)}
                       </td>
                     </tr>
                   ))}
@@ -567,7 +542,7 @@ export default function ClockModule() {
         const urgent = timeLeft <= 60;
         /* Sits under the sticky header rather than in the true corner, so it
            never lands on the header's own controls. Read-only, so it takes no
-           pointer events — it can float over the content on a narrow window
+           pointer events — it can float over the compass on a narrow window
            without stealing a click. */
         return (
           <div className="fixed top-16 left-6 z-10 pointer-events-none">

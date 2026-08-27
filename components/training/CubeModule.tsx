@@ -609,7 +609,7 @@ export default function CubeModule() {
 
       </main>
 
-      {/* ── TIMER + CANCEL — bottom center during test ── */}
+      {/* ── TIMER — top left during test ── */}
       {inTest && (() => {
         const TOTAL = 600;
         const R = 48;
@@ -620,8 +620,12 @@ export default function CubeModule() {
         const secs = timeLeft % 60;
         const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
         const urgent = timeLeft <= 60;
+        /* Sits under the sticky header rather than in the true corner, so it
+           never lands on the header's own controls. Read-only, so it takes no
+           pointer events — it can float over the content on a narrow window
+           without stealing a click. */
         return (
-          <div className="fixed bottom-6 left-0 right-0 flex flex-col items-center gap-3 z-10">
+          <div className="fixed top-16 left-6 z-10 pointer-events-none">
             <div className="flex flex-col items-center">
               <span className="text-xs font-semibold text-slate-500 mb-1.5">Total time for this module</span>
               <svg width="116" height="116" viewBox="0 0 116 116">
@@ -649,15 +653,19 @@ export default function CubeModule() {
                 </text>
               </svg>
             </div>
-            <button
-              onClick={() => setCancelModalOpen(true)}
-              className="text-xs font-semibold text-rose-600 hover:text-rose-700 px-5 py-2 rounded-lg border border-rose-300 hover:border-rose-400 bg-white hover:bg-rose-50 transition cursor-pointer shadow-sm"
-            >
-              Cancel test
-            </button>
           </div>
         );
       })()}
+
+      {/* ── CANCEL — bottom right during test ── */}
+      {inTest && (
+        <button
+          onClick={() => setCancelModalOpen(true)}
+          className="fixed bottom-6 right-6 z-10 text-xs font-semibold px-5 py-2 rounded-lg border border-rose-600 bg-rose-600 text-white hover:bg-white hover:text-rose-600 transition cursor-pointer shadow-sm"
+        >
+          Cancel test
+        </button>
+      )}
 
       {/* ── CANCEL CONFIRMATION MODAL ── */}
       {cancelModalOpen && (

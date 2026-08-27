@@ -24,6 +24,13 @@ const FEATURES = [
     href: '/training/clock',
   },
   {
+    icon: '🧭',
+    title: 'Spatial Orientation (COMPASS)',
+    desc: 'Read a bearing off a rotated compass that names only one of its eight points. Trains mental rotation and reference-frame shifting.',
+    badge: 'Available now',
+    href: '/training/compass',
+  },
+  {
     icon: '🔢',
     title: 'Mental Arithmetic',
     desc: 'Rapid-fire calculations under time pressure. Mirrors the numerical reasoning sections of PILAPT and COMPASS.',

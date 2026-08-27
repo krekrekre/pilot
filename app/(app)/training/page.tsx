@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 const MODULES = [
@@ -29,6 +32,14 @@ const MODULES = [
     proExam: true,
   },
   {
+    slug: 'compass',
+    icon: '🧭',
+    title: 'Spatial Orientation (COMPASS)',
+    desc: 'Read a bearing off a rotated compass that names only one of its eight points. Trains mental rotation and reference-frame shifting.',
+    category: 'Spatial',
+    available: true,
+  },
+  {
     slug: 'password',
     icon: '🔑',
     title: 'Symbol Pattern (PASSWORD)',
@@ -55,16 +66,59 @@ const MODULES = [
   },
 ];
 
+/* "Pro Exam" marks the modules that mirror a real assessment. Filtering on it
+   is the only interactive thing this page does, and the reason it is a client
+   component. */
+type Filter = 'all' | 'pro';
+
+const PRO_MODULES = MODULES.filter(m => m.proExam);
+
+const FILTERS: { id: Filter; label: string; count: number }[] = [
+  { id: 'all', label: 'All modules', count: MODULES.length },
+  { id: 'pro', label: 'Pro Exam', count: PRO_MODULES.length },
+];
+
 export default function TrainingPage() {
+  const [filter, setFilter] = useState<Filter>('all');
+  const shown = filter === 'pro' ? PRO_MODULES : MODULES;
+
   return (
     <div className="flex-1 max-w-5xl mx-auto w-full px-5 py-12">
-      <div className="mb-10">
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">Training Hub</h1>
-        <p className="text-sm text-slate-500">Select a module to begin your session.</p>
+      <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">Training Hub</h1>
+          <p className="text-sm text-slate-500">Select a module to begin your session.</p>
+        </div>
+
+        <div role="tablist" aria-label="Filter modules" className="flex gap-2 shrink-0">
+          {FILTERS.map(f => {
+            const on = filter === f.id;
+            return (
+              <button
+                key={f.id}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setFilter(f.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-bold transition cursor-pointer ${
+                  on
+                    ? 'bg-brand-500 border-brand-500 text-white'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                {f.label}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
+                  on ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {f.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
-        {MODULES.map(g => {
+        {shown.map(g => {
           const cardClass = `group rounded-2xl border p-6 flex gap-5 transition ${g.available ? 'border-slate-200 hover:border-brand-500/40 hover:shadow-md cursor-pointer bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40' : 'border-slate-100 bg-slate-50/60 opacity-60'}`;
 
           const content = (
