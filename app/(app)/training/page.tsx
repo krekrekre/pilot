@@ -40,6 +40,15 @@ const MODULES = [
     available: true,
   },
   {
+    slug: 'visual-perception',
+    icon: '👁️',
+    title: 'Visual Perception',
+    desc: 'Memorise a criterion, then read six instruments that flash by in four seconds. Trains perception, short-term visual memory and interpolation.',
+    category: 'Perception',
+    available: true,
+    proExam: true,
+  },
+  {
     slug: 'password',
     icon: '🔑',
     title: 'Symbol Pattern (PASSWORD)',
@@ -48,6 +57,25 @@ const MODULES = [
     available: true,
     proExam: true,
   },
+  /* Archived, not deleted. The module is finished and works — it is parked
+     while we come back to it, so it is off the hub rather than gone. The
+     component and its route are still in the tree:
+
+       components/training/FocusModule.tsx
+       app/(app)/training/focus/page.tsx
+
+     To put it back, restore this entry:
+
+     {
+       slug: 'focus',
+       icon: '🎯',
+       title: 'Focus Maintaining (RULES)',
+       desc: 'Apply one of three two-part rules to a pair of numbers, over and over, as the rule keeps changing. Trains sustained concentration under time pressure.',
+       category: 'Concentration',
+       available: true,
+       proExam: true,
+     },
+  */
   {
     slug: 'mental-arithmetic',
     icon: '🔢',
