@@ -747,7 +747,10 @@ export default function PasswordModule() {
 
             <PasswordBar symbols={currentQ.password} />
 
-            <div className="w-full max-w-sm space-y-2.5 pt-2">
+            {/* Same row chrome as the compass answers — full-width rows, a
+                small indicator, light type. The tick stays square here
+                because more than one word can be marked. */}
+            <div className="w-full max-w-xl space-y-2">
               {currentQ.words.map((word, i) => {
                 const on = currentQ.selected[i];
                 return (
@@ -755,7 +758,7 @@ export default function PasswordModule() {
                     key={i}
                     onClick={() => toggleWord(i)}
                     aria-pressed={on}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border-2 transition cursor-pointer ${
                       on
                         ? 'border-brand-500 bg-brand-500/8'
                         : 'border-slate-200 bg-white hover:border-slate-300'
@@ -763,12 +766,12 @@ export default function PasswordModule() {
                   >
                     {/* aria-pressed on the button carries the state — the tick
                         is decoration and is present even when unticked */}
-                    <span aria-hidden="true" className={`w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center text-[11px] font-bold ${
+                    <span aria-hidden="true" className={`w-[18px] h-[18px] shrink-0 rounded border-2 flex items-center justify-center text-[10px] font-bold ${
                       on ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300 text-transparent'
                     }`}>
                       ✓
                     </span>
-                    <span className="text-xl uppercase tracking-[0.2em] text-slate-900">{word}</span>
+                    <span className="text-base font-medium uppercase tracking-[0.2em] text-slate-900">{word}</span>
                     <span className="ml-auto text-[10px] font-mono text-slate-300">{i + 1}</span>
                   </button>
                 );
