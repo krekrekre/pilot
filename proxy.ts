@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/training'];
+// /training is deliberately open — no sign-in, no subscription — while the
+// product is still being validated. Put '/training' back in this list to
+// restore the sign-in wall and the paywall below in one step.
+const PROTECTED_PATHS = ['/dashboard'];
 const AUTH_PATHS = ['/login', '/signup'];
 
 export async function proxy(request: NextRequest) {
@@ -19,7 +22,7 @@ export async function proxy(request: NextRequest) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),

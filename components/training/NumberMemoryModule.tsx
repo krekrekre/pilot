@@ -209,6 +209,27 @@ export default function NumberMemoryModule() {
 
   const inTest = stage === 'prepare' || stage === 'audio' || stage === 'input';
 
+  // Record the finished session.
+  const postedRef = useRef(false);
+  useEffect(() => {
+    if (stage !== 'results') { postedRef.current = false; return; }
+    if (postedRef.current) return;
+    if (questions.length === 0) return;
+    postedRef.current = true;
+
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        moduleSlug: 'number-memory',
+        score: questions.filter(q => q.isCorrect).length,
+        totalQuestions: questions.length,
+        accuracy: Math.round((questions.filter(q => q.isCorrect).length / questions.length) * 100),
+        config,
+      }),
+    }).catch(() => { /* a failed save must not break the results screen */ });
+  }, [stage, questions, config]);
+
   // 10-minute countdown timer
   useEffect(() => {
     if (inTest) {

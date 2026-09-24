@@ -1,7 +1,26 @@
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import { createClient } from '@/lib/supabase/server';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+/** The signed-in user, or null — including when Supabase isn't configured. */
+async function currentUser() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    return null;
+  }
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
+}
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // /training is open to anonymous visitors, so the nav has to cope with
+  // having no session rather than assuming one.
+  const user = await currentUser();
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <nav className="w-full border-b border-slate-100 bg-white sticky top-0 z-20">
@@ -14,12 +33,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/training" className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium transition text-sm">
               Training
             </Link>
-            <Link href="/dashboard" className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium transition text-sm">
-              Dashboard
-            </Link>
+            {/* Dashboard is hidden while it's still a placeholder and sits behind
+                the subscription gate in proxy.ts — the link would dead-end at
+                /login. Restore this once the page shows real stats. */}
           </div>
           <div className="ml-auto">
-            <LogoutButton />
+            {user ? (
+              <LogoutButton />
+            ) : (
+              <Link href="/login" className="text-xs text-slate-400 hover:text-slate-700 font-medium transition px-2 py-1">
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </nav>

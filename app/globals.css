@@ -12,6 +12,18 @@
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
+/* Tailwind v4's preflight sets buttons to cursor: default, unlike v3. Restore
+   the pointer everywhere rather than adding cursor-pointer to each button.
+   Disabled controls keep the default arrow so they still read as inert. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+}
+
 /* Equalizer animation for audio-playing stage */
 .eq-bar {
   width: 14px;
