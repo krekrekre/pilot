@@ -28,17 +28,33 @@ function allowedAdmins(): string[] {
  * Fails closed: an unset or empty ADMIN_EMAILS grants nobody access.
  */
 export async function getAdminEmail(): Promise<string | null> {
+  // The gate 404s for every kind of denial so it doesn't advertise itself.
+  // That makes a misconfigured deployment indistinguishable from "not an
+  // admin", so say which one it was in the server log.
   const allowed = allowedAdmins();
-  if (allowed.length === 0) return null;
-  // No backend configured — there is no session to check, so nobody is an admin.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return null;
+  if (allowed.length === 0) {
+    console.warn('[admin] denied: ADMIN_EMAILS is unset or empty in this environment');
+    return null;
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    console.warn('[admin] denied: Supabase env vars missing in this environment');
+    return null;
+  }
 
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     const email = user?.email?.toLowerCase();
-    return email && allowed.includes(email) ? email : null;
+    if (!email) {
+      console.warn('[admin] denied: no signed-in user on this request');
+      return null;
+    }
+    if (!allowed.includes(email)) {
+      console.warn('[admin] denied: signed-in email is not in ADMIN_EMAILS');
+      return null;
+    }
+    return email;
   } catch {
     // A broken auth lookup must deny access, never grant it.
     return null;

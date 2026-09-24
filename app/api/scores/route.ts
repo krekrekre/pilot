@@ -33,8 +33,10 @@ function parse(body: unknown): Payload | null {
 }
 
 export async function POST(req: NextRequest) {
-  // No backend configured (local dev) — accept and drop.
+  // No backend configured — accept and drop so the results screen still works.
+  // Loud, because in a real deployment this means results are being lost.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('[scores] DISCARDING run: Supabase env vars missing in this environment');
     return NextResponse.json({ ok: true });
   }
 
