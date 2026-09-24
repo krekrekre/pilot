@@ -1,5 +1,6 @@
 import { listSubjects, summarise } from '@/lib/admin-data';
 import SubjectTable from './SubjectTable';
+import ClearDataButton from './ClearDataButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,13 @@ export default async function AdminPage() {
           </p>
         </div>
       ) : (
-        <SubjectTable subjects={subjects} now={stats.now} />
+        <>
+          <SubjectTable subjects={subjects} now={stats.now} />
+          {/* Destructive, so it sits below the data rather than beside it. */}
+          <div className="flex justify-end mt-4">
+            <ClearDataButton rows={stats.sessions} subjects={stats.subjects} />
+          </div>
+        </>
       )}
     </div>
   );
